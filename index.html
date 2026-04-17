@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <title>XING JI HUA | 星计划城市抽取</title>
+        <style>
+            :root {
+                --apple-bg: #ffffff;
+                --apple-secondary: #f5f5f7;
+                --apple-accent: #ff5e00;
+                --apple-text: #1d1d1f;
+                --apple-gray: #86868b;
+            }
+
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+                outline: none;
+            }
+            body {
+                background-color: var(--apple-bg);
+                color: var(--apple-text);
+                font-family: -apple-system, "SF Pro Display", "PingFang SC", sans-serif;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-height: 100vh;
+            }
+
+            header {
+                width: 100%;
+                padding: 20px;
+                text-align: center;
+                border-bottom: 0.5px solid #d2d2d7;
+                background: #fff;
+            }
+            .logo {
+                font-size: 18px;
+                font-weight: 600;
+                letter-spacing: 1px;
+            }
+
+            /* 模式切换导航 */
+            .controls-nav {
+                margin: 25px 0;
+                background: var(--apple-secondary);
+                padding: 4px;
+                border-radius: 14px;
+                display: flex;
+                width: 90%;
+                max-width: 360px;
+            }
+            .tab-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 12px 0;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                border-radius: 11px;
+                transition: 0.2s;
+                color: var(--apple-gray);
+            }
+            .tab-btn.active {
+                background: white;
+                color: var(--apple-text);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            }
+
+            .stage {
+                flex: 1;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            /* --- 大转盘 --- */
+            #wheel-wrapper {
+                position: relative;
+                width: 320px;
+                height: 320px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .pointer-needle {
+                position: absolute;
+                top: -10px;
+                width: 3px;
+                height: 35px;
+                background: var(--apple-accent);
+                border-radius: 2px;
+                z-index: 20;
+            }
+            #wheel-inner {
+                width: 280px;
+                height: 280px;
+                border-radius: 50%;
+                background: #fff;
+                position: relative;
+                transition: transform 5s cubic-bezier(0.15, 0, 0, 1);
+                box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.02), 0 10px 40px rgba(0, 0, 0, 0.05);
+            }
+            .tick {
+                position: absolute;
+                width: 1.5px;
+                height: 12px;
+                background: #e2e2e7;
+                transform-origin: 50% 140px;
+            }
+            .display-box {
+                position: absolute;
+                z-index: 10;
+                text-align: center;
+                pointer-events: none;
+            }
+            .display-label {
+                font-size: 12px;
+                color: var(--apple-gray);
+                letter-spacing: 2px;
+            }
+            .display-value {
+                font-size: 32px;
+                font-weight: 700;
+                color: var(--apple-accent);
+                margin-top: 5px;
+            }
+
+            /* --- 老虎机 --- */
+            #slot-wrapper {
+                display: none;
+                height: 150px;
+                width: 320px;
+                background: white;
+                border-radius: 24px;
+                position: relative;
+                overflow: hidden;
+                mask-image: linear-gradient(0deg, transparent, black 25%, black 75%, transparent);
+                -webkit-mask-image: linear-gradient(
+                    0deg,
+                    transparent,
+                    black 25%,
+                    black 75%,
+                    transparent
+                );
+                border: 1px solid #f0f0f2;
+            }
+            .slot-list {
+                transition: transform 4s cubic-bezier(0.1, 0, 0, 1);
+                text-align: center;
+            }
+            .slot-item {
+                height: 50px;
+                line-height: 50px;
+                font-size: 24px;
+                font-weight: 700;
+                color: var(--apple-accent);
+            }
+
+            /* --- 翻翻看 --- */
+            #card-wrapper {
+                display: none;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                width: 100%;
+                max-width: 360px;
+            }
+            .card {
+                aspect-ratio: 1;
+                background: var(--apple-secondary);
+                border-radius: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                color: #d2d2d7;
+                cursor: pointer;
+                transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .card:active {
+                transform: scale(0.92);
+            }
+            .card.revealed {
+                background: white;
+                border: 2.4px solid var(--apple-accent);
+                color: var(--apple-accent);
+                font-size: 15px;
+                font-weight: 800;
+            }
+
+            /* 底部按钮 */
+            .action-bar {
+                padding: 50px 0;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            .apple-btn {
+                width: 85%;
+                max-width: 300px;
+                padding: 18px;
+                border-radius: 20px;
+                border: none;
+                background: var(--apple-text);
+                color: white;
+                font-size: 17px;
+                font-weight: 600;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                transition: 0.2s;
+            }
+            .apple-btn:active {
+                transform: scale(0.98);
+                opacity: 0.9;
+            }
+
+            /* 弹窗 */
+            .modal {
+                position: fixed;
+                inset: 0;
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(20px);
+                display: none;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+            }
+            .modal-city {
+                font-size: 50px;
+                font-weight: 800;
+                color: var(--apple-accent);
+                margin: 20px 0;
+            }
+            .close-btn {
+                padding: 12px 40px;
+                border-radius: 20px;
+                border: none;
+                background: var(--apple-text);
+                color: white;
+                font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <header><div class="logo">XING JI HUA</div></header>
+
+        <div class="controls-nav">
+            <button class="tab-btn active" onclick="switchMode('wheel', this)">大转盘</button>
+            <button class="tab-btn" onclick="switchMode('slot', this)">老虎机</button>
+            <button class="tab-btn" onclick="switchMode('card', this)">翻翻看</button>
+        </div>
+
+        <div class="stage">
+            <div id="wheel-wrapper">
+                <div class="pointer-needle"></div>
+                <div id="wheel-inner"></div>
+                <div class="display-box">
+                    <div class="display-label">CITY</div>
+                    <div class="display-value" id="wheel-display">READY</div>
+                </div>
+            </div>
+
+            <div id="slot-wrapper">
+                <div class="slot-list" id="slot-list"></div>
+            </div>
+
+            <div id="card-wrapper"></div>
+        </div>
+
+        <div class="action-bar" id="action-bar">
+            <button class="apple-btn" id="main-btn" onclick="executeDraw()">立即抽取结果</button>
+        </div>
+
+        <div class="modal" id="modal">
+            <div style="color: var(--apple-gray); font-weight: 500">SUCCESS</div>
+            <div class="modal-city" id="res-city">---</div>
+            <button class="close-btn" onclick="closeModal()">确认收下</button>
+        </div>
+
+        <script>
+            // 录入图片中的全量100+城市
+            const cities = [
+                "北京",
+                "佛山",
+                "昆明市",
+                "烟台市",
+                "海口市",
+                "三亚市",
+                "邯郸市",
+                "包头市",
+                "上海",
+                "郑州",
+                "哈尔滨市",
+                "嘉兴市",
+                "乌鲁木齐市",
+                "湖州市",
+                "济宁市",
+                "咸阳市",
+                "广州",
+                "天津",
+                "济南市",
+                "南通市",
+                "绍兴市",
+                "呼和浩特市",
+                "芜湖市",
+                "秦皇岛市",
+                "深圳",
+                "合肥",
+                "长春市",
+                "金华市",
+                "中山市",
+                "廊坊市",
+                "淄博市",
+                "株洲市",
+                "成都",
+                "青岛",
+                "温州市",
+                "珠海市",
+                "台州市",
+                "洛阳市",
+                "银川市",
+                "莆田市",
+                "杭州",
+                "东莞",
+                "石家庄市",
+                "清远市",
+                "兰州市",
+                "威海市",
+                "柳州市",
+                "吉林市",
+                "重庆",
+                "宁波",
+                "南宁市",
+                "荆州市",
+                "潍坊市",
+                "盐城市",
+                "绵阳市",
+                "淮安市",
+                "武汉",
+                "厦门",
+                "常州市",
+                "泰安市",
+                "保定市",
+                "临沂市",
+                "湛江市",
+                "肇庆市",
+                "苏州",
+                "福州",
+                "泉州市",
+                "衢州市",
+                "镇江市",
+                "江门市",
+                "鞍山市",
+                "宁德市",
+                "西安",
+                "无锡",
+                "南昌市",
+                "盘锦市",
+                "扬州市",
+                "汕头市",
+                "赣州市",
+                "衡阳市",
+                "南京",
+                "惠州",
+                "贵阳市",
+                "东营市",
+                "桂林市",
+                "泰州市",
+                "大庆市",
+                "南平市",
+                "长沙",
+                "徐州",
+                "太原市",
+                "三明市",
+                "唐山市",
+                "漳州市",
+                "宜昌市",
+                "连云港市",
+            ];
+
+            let currentMode = "wheel";
+            let isDrawing = false;
+
+            // 转盘刻度初始化
+            function initWheel() {
+                const inner = document.getElementById("wheel-inner");
+                inner.innerHTML = "";
+                for (let i = 0; i < 60; i++) {
+                    const tick = document.createElement("div");
+                    tick.className = "tick";
+                    tick.style.transform = `rotate(${i * 6}deg)`;
+                    inner.appendChild(tick);
+                }
+            }
+
+            // 模式切换函数
+            function switchMode(mode, btn) {
+                if (isDrawing) return;
+                currentMode = mode;
+                document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+                btn.classList.add("active");
+
+                document.getElementById("wheel-wrapper").style.display =
+                    mode === "wheel" ? "flex" : "none";
+                document.getElementById("slot-wrapper").style.display =
+                    mode === "slot" ? "block" : "none";
+                document.getElementById("card-wrapper").style.display =
+                    mode === "card" ? "grid" : "none";
+                document.getElementById("action-bar").style.display =
+                    mode === "card" ? "none" : "flex";
+
+                if (mode === "slot") {
+                    const list = document.getElementById("slot-list");
+                    list.innerHTML = cities
+                        .map((c) => `<div class="slot-item">${c}</div>`)
+                        .join("");
+                    list.style.transform = "translateY(50px)";
+                }
+                if (mode === "card") initCards();
+            }
+
+            // 翻牌初始化
+            function initCards() {
+                const wrapper = document.getElementById("card-wrapper");
+                wrapper.innerHTML = "";
+                for (let i = 0; i < 9; i++) {
+                    const card = document.createElement("div");
+                    card.className = "card";
+                    card.innerText = "?";
+                    card.onclick = () => {
+                        if (isDrawing) return;
+                        isDrawing = true;
+                        const res = cities[Math.floor(Math.random() * cities.length)];
+                        card.innerText = res;
+                        card.classList.add("revealed");
+                        setTimeout(() => finishDraw(res), 800);
+                    };
+                    wrapper.appendChild(card);
+                }
+            }
+
+            // 执行抽取
+            function executeDraw() {
+                if (isDrawing) return;
+                isDrawing = true;
+                const result = cities[Math.floor(Math.random() * cities.length)];
+
+                if (currentMode === "wheel") {
+                    const deg = 3600 + Math.floor(Math.random() * 360);
+                    document.getElementById("wheel-inner").style.transform = `rotate(${deg}deg)`;
+                    let timer = setInterval(() => {
+                        document.getElementById("wheel-display").innerText =
+                            cities[Math.floor(Math.random() * cities.length)];
+                    }, 100);
+                    setTimeout(() => {
+                        clearInterval(timer);
+                        finishDraw(result);
+                    }, 5000);
+                } else if (currentMode === "slot") {
+                    const idx = cities.indexOf(result);
+                    const list = document.getElementById("slot-list");
+                    list.style.transform = `translateY(-${idx * 50 - 50}px)`;
+                    setTimeout(() => finishDraw(result), 4200);
+                }
+            }
+
+            function finishDraw(city) {
+                document.getElementById("res-city").innerText = city;
+                if (currentMode === "wheel")
+                    document.getElementById("wheel-display").innerText = city;
+                document.getElementById("modal").style.display = "flex";
+                isDrawing = false;
+            }
+
+            function closeModal() {
+                document.getElementById("modal").style.display = "none";
+                if (currentMode === "wheel") {
+                    const inner = document.getElementById("wheel-inner");
+                    inner.style.transition = "none";
+                    inner.style.transform = "rotate(0deg)";
+                    setTimeout(
+                        () => (inner.style.transition = "transform 5s cubic-bezier(0.15, 0, 0, 1)"),
+                        50
+                    );
+                    document.getElementById("wheel-display").innerText = "READY";
+                }
+                if (currentMode === "card") initCards();
+            }
+
+            window.onload = initWheel;
+        </script>
+    </body>
+</html>
